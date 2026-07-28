@@ -1,5 +1,41 @@
-*conf*.json
-.DS_Store
-__pycache__
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform.lock.hcl
+
+# IDE
 .idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials
+*.pem
+*.key
 .env
+.databrickscfg
+credentials
+credentials.json
+*credential*
+*.secret
+
+# Claude Code (per-user local config; skills are tracked in .claude/skills/)
+.claude/settings.local.json
+
+# Deployments (created at runtime by Claude per customer)
+deployments/
