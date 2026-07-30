@@ -113,7 +113,7 @@ Each skill loads independently — Claude only reads what's relevant to your req
 | AWS   | Yes | Yes | Yes (AWS PrivateLink) | Yes | Yes (RDS, Redshift, Snowflake) |
 | GCP   | Yes | Yes | Yes (PSC backend + frontend) | Yes | Yes (CloudSQL Postgres) |
 
-> **Disclaimer:** This is a Databricks Field Engineering project. It is **not** an officially supported Databricks product and comes with no warranty or SLA. It provisions real, billable cloud infrastructure on your accounts — review every `terraform plan` before approving. Use is subject to the [LICENSE](LICENSE.md). See [SECURITY.md](SECURITY.md) for the security model and its limitations.
+> **Disclaimer:** This is a Databricks Solutions project. It is **not** an officially supported Databricks product and comes with no warranty or SLA. It provisions real, billable cloud infrastructure on your accounts — review every `terraform plan` before approving. Use is subject to the [LICENSE](LICENSE.md). See [SECURITY.md](SECURITY.md) for the security model and its limitations.
 
 ## Support
 
