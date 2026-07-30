@@ -109,7 +109,7 @@ The hook has no third-party Python dependencies.
 If you find a security issue in the kit (skill, hook, or repo), please report it privately:
 
 - Email `bugbounty@databricks.com` (preferred), or
-- Open a [GitHub Security Advisory](https://github.com/databricks-field-eng/ai-platform-kit/security/advisories/new). Do not open a public issue for security bugs.
+- Open a [GitHub Security Advisory](https://github.com/databricks-solutions/ai-platform-kit/security/advisories/new). Do not open a public issue for security bugs.
 
 Please include: a description of the vulnerability, steps to reproduce, the affected file/skill, and any suggested mitigation.
 

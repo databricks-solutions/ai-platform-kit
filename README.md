@@ -2,6 +2,8 @@
 
 **AI-powered Databricks platform engineering.** Provision workspaces, configure Unity Catalog, set up networking, manage groups and permissions — all through natural language with Claude.
 
+> Sibling to the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit): where that kit gives coding agents Databricks-specific skills for *building on* the platform, this kit focuses on *standing up* the platform itself — workspaces, Unity Catalog, identity, and networking across Azure, AWS, and GCP.
+
 ## What it does
 
 Tell Claude what you need, and it handles the rest:
@@ -33,7 +35,7 @@ Claude writes the Terraform and SDK calls from scratch based on your specific re
     SKILL.md                         #     Cloud-agnostic
   private-networking/                #   Private link, hub-spoke, NCC, PSC
     SKILL.md + AZURE.md / AWS.md / GCP.md
-  deployment-verification/           #   3-path verification (best-effort)
+  deployment-verification/           #   3-path verification (mandatory after deploy)
     SKILL.md                         #     Cloud-agnostic
 ```
 
@@ -59,7 +61,7 @@ In other words: the kit is the skills and a little glue. It orchestrates tools t
 Clone the repo, `cd` in, run Claude Code:
 
 ```bash
-git clone https://github.com/databricks-field-eng/ai-platform-kit.git
+git clone https://github.com/databricks-solutions/ai-platform-kit.git
 cd ai-platform-kit
 claude
 ```
@@ -99,7 +101,7 @@ Claude will:
 | **identity-governance** | Groups, users, SPs, RBAC | "groups", "permissions", "service principal" |
 | **workspace-config** | SQL warehouses, policies, secrets, tokens | "SQL warehouse", "cluster policy", "secret" |
 | **private-networking** | Private link, hub-spoke, NCC, GCP PSC | "private link", "PSC", "hub-spoke", "NCC" |
-| **deployment-verification** | 3-path verification (classic + sqlwh + notebook), best-effort | Loaded whenever a workspace + UC has been freshly deployed or modified |
+| **deployment-verification** | 3-path verification (classic + sqlwh + notebook), mandatory after any deploy | Loaded whenever a workspace + UC has been freshly deployed or modified |
 
 Each skill loads independently — Claude only reads what's relevant to your request. Cloud-specific files (`AZURE.md`, `AWS.md`, `GCP.md` and their numbered topic siblings) are loaded based on your target cloud to prevent cross-cloud confusion.
 
@@ -112,3 +114,17 @@ Each skill loads independently — Claude only reads what's relevant to your req
 | GCP   | Yes | Yes | Yes (PSC backend + frontend) | Yes | Yes (CloudSQL Postgres) |
 
 > **Disclaimer:** This is a Databricks Field Engineering project. It is **not** an officially supported Databricks product and comes with no warranty or SLA. It provisions real, billable cloud infrastructure on your accounts — review every `terraform plan` before approving. Use is subject to the [LICENSE](LICENSE.md). See [SECURITY.md](SECURITY.md) for the security model and its limitations.
+
+## Support
+
+Databricks support does not cover this project. For questions or bugs, open a
+[GitHub issue](https://github.com/databricks-solutions/ai-platform-kit/issues) and the
+team will help on a best-effort basis. For security issues, follow the private
+disclosure process in [SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## License
+
+&copy; 2026 Databricks, Inc. All rights reserved.
+
+The source in this project is provided subject to the Databricks License. See
+[LICENSE.md](LICENSE.md) for the full text and [NOTICE.md](NOTICE.md) for attributions.

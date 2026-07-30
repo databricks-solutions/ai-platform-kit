@@ -9,7 +9,7 @@ free to open an issue with requests or suggestions.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/databricks-field-eng/ai-platform-kit.git
+   git clone https://github.com/databricks-solutions/ai-platform-kit.git
    cd ai-platform-kit
    ```
 2. Open the repo with Claude Code — skills in `.claude/skills/` are auto-discovered. No
