@@ -1,12 +1,12 @@
 # Databricks Platform Kit
 
-**AI-powered Databricks platform engineering.** Provision workspaces, configure Unity Catalog, set up networking, manage groups and permissions — all through natural language with Claude.
+**AI-powered Databricks platform engineering.** Provision workspaces, configure Unity Catalog, set up networking, manage groups and permissions — all through natural language with your coding agent (Claude Code, Codex, Cursor, Copilot, Gemini, and more).
 
 > Sibling to the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit): where that kit gives coding agents Databricks-specific skills for *building on* the platform, this kit focuses on *standing up* the platform itself — workspaces, Unity Catalog, identity, and networking across Azure, AWS, and GCP.
 
 ## What it does
 
-Tell Claude what you need, and it handles the rest:
+Tell your agent what you need, and it handles the rest:
 
 - **Workspace provisioning** — VNet/VPC injection, Secure Cluster Connectivity across Azure, AWS, GCP
 - **Unity Catalog** — opinionated setup: self-managed metastore, per-env catalogs, external locations, medallion schemas, Lakehouse Federation
@@ -15,7 +15,7 @@ Tell Claude what you need, and it handles the rest:
 - **Private networking** — private link (AWS), Private Endpoints (Azure), Private Service Connect (GCP), hub-spoke, NCC for serverless connectivity (when you need it)
 - **Built-in verification** — a 3-path test (classic cluster + serverless SQL warehouse + serverless notebook job) designed to catch common configuration failures after a deploy (it does not guarantee correctness or fitness for any particular use)
 
-Claude writes the Terraform and SDK calls from scratch based on your specific requirements — no rigid templates to fill in.
+The agent writes the Terraform and SDK calls from scratch based on your specific requirements — no rigid templates to fill in.
 
 ## Architecture
 
@@ -58,58 +58,9 @@ In other words: the kit is the skills and a little glue. It orchestrates tools t
 
 ## Quick start
 
-**Claude Code** — clone, `cd` in, run:
-
-```bash
-git clone https://github.com/databricks-solutions/ai-platform-kit.git
-cd ai-platform-kit
-claude
-```
-
-Claude Code auto-discovers the skills in `.claude/skills/`. No install step needed.
-
-## Use with your agent
-
-Prefer a different agent, or want the skills in your own project? The installer copies
-the skills into the layout your agent expects and writes its instruction file. Pick your
-platform:
-
-**macOS / Linux**
-```bash
-bash <(curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.sh)
-```
-
-**Windows (PowerShell)**
-```powershell
-irm https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.ps1 | iex
-```
-
-You'll be asked **which agent(s)** and **where** (this project, or globally for all your
-projects) — that's it. Supported agents and what lands where:
-
-| Agent | Where skills go | Instruction file written |
-|-------|-----------------|--------------------------|
-| Claude Code | `.claude/skills/` | `.claude/settings.json` + cred-block hook |
-| OpenAI Codex | `.agents/skills/` | `AGENTS.md` |
-| Cursor | `.cursor/skills/` | `.cursor/rules/databricks-platform-kit.mdc` |
-| GitHub Copilot | `.agents/skills/` | `.github/copilot-instructions.md` |
-| Gemini CLI | (referenced in place) | `GEMINI.md` |
-| Windsurf | (referenced in place) | `.windsurf/rules/databricks-platform-kit.md` |
-| OpenCode | `.agents/skills/` | `AGENTS.md` |
-| Kiro | `.kiro/skills/` | native (Agent Skills) |
-
-Already cloned the repo? A root `AGENTS.md` and `GEMINI.md` are committed, so Codex,
-Cursor, Copilot, Gemini, Windsurf, and OpenCode work on clone with no install step. You
-can also run the installer directly without the wrapper:
-
-```bash
-python3 scripts/skills-sync.py --agent codex --scope project
-```
-
-> **Credential safety on non-Claude agents:** the Claude Code install ships a PreToolUse
-> hook that blocks reads of credential/state files. Other agents have no equivalent hook —
-> run them in a **gated approval/sandbox mode** so tool calls that touch those files require
-> confirmation.
+Run the installer, pick your agent(s), and start provisioning. The installer copies the
+skills into the layout your agent expects and writes its instruction file — works with
+Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI, Windsurf, OpenCode, and Kiro.
 
 ### Prerequisites
 
@@ -118,18 +69,98 @@ python3 scripts/skills-sync.py --agent codex --scope project
 - **Terraform** >= 1.9.0: `brew install terraform`
 - **Cloud CLI**: `az login` (Azure), `aws configure` (AWS), or `gcloud auth login` (GCP) — depending on which cloud you'll deploy to
 - **Databricks CLI** >= 0.296.0: `brew install databricks` (older versions can serve stale tokens and break auth debugging)
-- **Databricks account ID** — from the accounts console for your cloud:
-  - AWS: `accounts.cloud.databricks.com`
-  - Azure: `accounts.azuredatabricks.net`
-  - GCP: `accounts.gcp.databricks.com`
+- **Databricks account ID** — from the accounts console for your cloud (`accounts.cloud.databricks.com` for AWS, `accounts.azuredatabricks.net` for Azure, `accounts.gcp.databricks.com` for GCP)
+
+### Install
+
+By default the installer sets up skills at the **project** level (in the current
+directory) — a good fit, but you must run your agent from that directory. Pass `--global`
+(or choose global in the interactive prompt) to install once for **all** your projects.
+
+#### macOS / Linux
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.sh)
+```
+
+<details>
+<summary>Advanced options</summary>
+
+```bash
+# Install for a specific agent, globally, without prompts
+bash <(curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.sh) --agent codex --scope global
+
+# Multiple agents at once
+bash <(curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.sh) --agents claude,cursor,codex
+
+# Every supported agent
+bash <(curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.sh) --agent all
+```
+</details>
+
+#### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.ps1 | iex
+```
+
+<details>
+<summary>Advanced options</summary>
+
+```powershell
+# Download the script first, then pass arguments
+irm https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.ps1 -OutFile install.ps1
+./install.ps1 --agent codex --scope global
+./install.ps1 --agents claude,cursor,codex
+```
+</details>
+
+**Next steps:** respond to the interactive prompts (which agent, and project vs. global),
+then open the folder in your agent and tell it what you want — see [Usage](#usage) below.
+
+### Supported agents
+
+The skill content is identical for every agent; only the packaging differs.
+
+| Agent | Where skills go | Instruction file written |
+|-------|-----------------|--------------------------|
+| Claude Code | `.claude/skills/` | `.claude/settings.json` + cred-block hook |
+| OpenAI Codex | `.agents/skills/` | `AGENTS.md` |
+| Cursor | `.cursor/skills/` | `.cursor/rules/databricks-platform-kit.mdc` |
+| GitHub Copilot | `.agents/skills/` | `.github/copilot-instructions.md` |
+| Gemini CLI | `.agents/skills/` | `GEMINI.md` |
+| Windsurf | `.agents/skills/` | `.windsurf/rules/databricks-platform-kit.md` |
+| OpenCode | `.agents/skills/` | `AGENTS.md` |
+| Kiro | `.kiro/skills/` | native (Agent Skills) |
+
+> **Credential safety on non-Claude agents:** the Claude Code install ships a PreToolUse
+> hook that blocks reads of credential/state files. Other agents have no equivalent hook —
+> run them in a **gated approval/sandbox mode** so tool calls that touch those files require
+> confirmation.
+
+<details>
+<summary>Already cloned the repo, or want to run the installer directly?</summary>
+
+A root `AGENTS.md` and `GEMINI.md` are committed, so Codex, Cursor, Copilot, Gemini,
+Windsurf, and OpenCode work the moment you clone — no install step. For Claude Code, the
+`.claude/skills/` are auto-discovered on clone as well.
+
+You can also call the installer script directly, skipping the `curl` wrapper:
+
+```bash
+git clone https://github.com/databricks-solutions/ai-platform-kit.git
+cd ai-platform-kit
+python3 scripts/skills-sync.py --agent codex --scope project   # or --into <path>
+```
+</details>
 
 ## Usage
 
-Just tell Claude what you want:
+Just tell your agent what you want:
 
 > "Set up 3 Databricks workspaces (dev/stg/prod) on Azure with Unity Catalog and proper groups"
 
-Claude will:
+The agent will:
 1. Ask the right questions (cloud, region, environment strategy, naming, networking, compliance)
 2. Check your auth and gather inputs in one batch
 3. Write Terraform tailored to your request
@@ -147,7 +178,7 @@ Claude will:
 | **private-networking** | Private link, hub-spoke, NCC, GCP PSC | "private link", "PSC", "hub-spoke", "NCC" |
 | **deployment-verification** | 3-path verification (classic + sqlwh + notebook), mandatory after any deploy | Loaded whenever a workspace + UC has been freshly deployed or modified |
 
-Each skill loads independently — Claude only reads what's relevant to your request. Cloud-specific files (`AZURE.md`, `AWS.md`, `GCP.md` and their numbered topic siblings) are loaded based on your target cloud to prevent cross-cloud confusion.
+Each skill loads independently — the agent only reads what's relevant to your request. Cloud-specific files (`AZURE.md`, `AWS.md`, `GCP.md` and their numbered topic siblings) are loaded based on your target cloud to prevent cross-cloud confusion.
 
 ## Supported clouds
 
