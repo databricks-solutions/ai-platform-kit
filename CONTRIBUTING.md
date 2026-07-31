@@ -19,6 +19,10 @@ free to open an issue with requests or suggestions.
 
 - **Documentation**: Update the relevant `SKILL.md` and the README skills table when adding
   or modifying a skill.
+- **Agent pointer files**: After adding, renaming, or removing a skill, rerun
+  `python3 scripts/skills-sync.py --generate` to refresh the committed `AGENTS.md` and
+  `GEMINI.md` (they are generated from `.claude/skills/` — do not hand-edit them). CI can
+  guard this with `--generate --check`.
 - **Naming**: Use lowercase with hyphens for directories (e.g. `platform-provisioning`).
 - **No credentials**: Never commit credentials, tokens, cloud account IDs, customer names,
   or `*.tfstate` / `*.tfvars` files. Use placeholders in all examples.

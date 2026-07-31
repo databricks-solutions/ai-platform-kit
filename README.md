@@ -39,7 +39,7 @@ Claude writes the Terraform and SDK calls from scratch based on your specific re
     SKILL.md                         #     Cloud-agnostic
 ```
 
-Claude uses `az login` / `aws configure` / `gcloud auth login` + `terraform` via shell. No Python dependencies, no MCP server — just skills.
+The agent uses `az login` / `aws configure` / `gcloud auth login` + `terraform` via shell. No third-party Python packages, no MCP server — just skills (the installer is a single stdlib-only Python script).
 
 ## What this repo ships (and what it doesn't)
 
@@ -50,15 +50,15 @@ This kit is a thin layer. It's worth being precise about what it is, because tha
 - One PreToolUse hook (`.claude/hooks/block-cred-reads.py`) and three pre-flight scripts (`.claude/skills/platform-provisioning/scripts/precheck-*.sh`).
 
 **Brought by the user (not shipped here, each under its own terms):**
-- **Claude Code** — the agent that reads the skills and executes commands (Anthropic).
+- **A coding agent** — Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI, Windsurf, OpenCode, or Kiro — that reads the skills and executes commands (their respective vendors).
 - **Terraform** and the **AWS / Azure / gcloud / Databricks CLIs** — the tools that actually provision infrastructure (their respective vendors).
-- The user's own cloud credentials, accounts, and the choice of how to run Claude Code (interactive vs. auto mode, etc.).
+- The user's own cloud credentials, accounts, and the choice of how to run the agent (interactive vs. auto mode, etc.).
 
-In other words: the kit is the skills and a little glue. It orchestrates tools the user installs and authenticates separately, using credentials the kit never sees. The license and [SECURITY.md](SECURITY.md) scope Databricks' responsibility to this repo's own contents — not to Claude Code, the cloud tools, or how the user chooses to operate them.
+In other words: the kit is the skills and a little glue. It orchestrates tools the user installs and authenticates separately, using credentials the kit never sees. The license and [SECURITY.md](SECURITY.md) scope Databricks' responsibility to this repo's own contents — not to the agent, the cloud tools, or how the user chooses to operate them.
 
 ## Quick start
 
-Clone the repo, `cd` in, run Claude Code:
+**Claude Code** — clone, `cd` in, run:
 
 ```bash
 git clone https://github.com/databricks-solutions/ai-platform-kit.git
@@ -68,9 +68,53 @@ claude
 
 Claude Code auto-discovers the skills in `.claude/skills/`. No install step needed.
 
+## Use with your agent
+
+Prefer a different agent, or want the skills in your own project? The installer copies
+the skills into the layout your agent expects and writes its instruction file. Pick your
+platform:
+
+**macOS / Linux**
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.sh)
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/databricks-solutions/ai-platform-kit/main/install.ps1 | iex
+```
+
+You'll be asked **which agent(s)** and **where** (this project, or globally for all your
+projects) — that's it. Supported agents and what lands where:
+
+| Agent | Where skills go | Instruction file written |
+|-------|-----------------|--------------------------|
+| Claude Code | `.claude/skills/` | `.claude/settings.json` + cred-block hook |
+| OpenAI Codex | `.agents/skills/` | `AGENTS.md` |
+| Cursor | `.cursor/skills/` | `.cursor/rules/databricks-platform-kit.mdc` |
+| GitHub Copilot | `.agents/skills/` | `.github/copilot-instructions.md` |
+| Gemini CLI | (referenced in place) | `GEMINI.md` |
+| Windsurf | (referenced in place) | `.windsurf/rules/databricks-platform-kit.md` |
+| OpenCode | `.agents/skills/` | `AGENTS.md` |
+| Kiro | `.kiro/skills/` | native (Agent Skills) |
+
+Already cloned the repo? A root `AGENTS.md` and `GEMINI.md` are committed, so Codex,
+Cursor, Copilot, Gemini, Windsurf, and OpenCode work on clone with no install step. You
+can also run the installer directly without the wrapper:
+
+```bash
+python3 scripts/skills-sync.py --agent codex --scope project
+```
+
+> **Credential safety on non-Claude agents:** the Claude Code install ships a PreToolUse
+> hook that blocks reads of credential/state files. Other agents have no equivalent hook —
+> run them in a **gated approval/sandbox mode** so tool calls that touch those files require
+> confirmation.
+
 ### Prerequisites
 
-- **Claude Code** installed and authenticated (`claude` CLI)
+- **A coding agent** — Claude Code, Codex, Cursor, Copilot, Gemini CLI, Windsurf, OpenCode, or Kiro
+- **Python 3** — for the installer (`python3` on PATH; already present with the Databricks/cloud CLIs)
 - **Terraform** >= 1.9.0: `brew install terraform`
 - **Cloud CLI**: `az login` (Azure), `aws configure` (AWS), or `gcloud auth login` (GCP) — depending on which cloud you'll deploy to
 - **Databricks CLI** >= 0.296.0: `brew install databricks` (older versions can serve stale tokens and break auth debugging)
