@@ -595,7 +595,7 @@ def install_agent(agent_key: str, skills: list[Skill], target: Path, is_global: 
         written.append(_write(target / "GEMINI.md", render_gemini_md(skills, copied_prefix)))
     elif pointer == "cursor_mdc":
         written.append(_write(
-            target / ".cursor" / "rules" / "databricks-platform-kit.mdc",
+            target / ".cursor" / "rules" / "ai-platform-kit.mdc",
             render_cursor_mdc(skills, copied_prefix),
         ))
     elif pointer == "copilot_md":
@@ -605,7 +605,7 @@ def install_agent(agent_key: str, skills: list[Skill], target: Path, is_global: 
         ))
     elif pointer == "windsurf_rules":
         written.append(_write(
-            target / ".windsurf" / "rules" / "databricks-platform-kit.md",
+            target / ".windsurf" / "rules" / "ai-platform-kit.md",
             render_windsurf_rule(skills, copied_prefix),
         ))
     elif pointer == "none":
