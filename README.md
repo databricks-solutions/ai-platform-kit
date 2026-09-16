@@ -47,7 +47,7 @@ This kit is a thin layer. It's worth being precise about what it is, because tha
 
 **Shipped by this repo (covered by the license):**
 - The skill files (`.claude/skills/**`) — the instructions that drive the agent.
-- One PreToolUse hook (`.claude/hooks/block-cred-reads.py`) and three pre-flight scripts (`.claude/skills/platform-provisioning/scripts/precheck-*.sh`).
+- One PreToolUse hook (`hooks/block-cred-reads.py`, wired via `hooks/hooks.json` for plugin installs) and three pre-flight scripts (`.claude/skills/platform-provisioning/scripts/precheck-*.sh`).
 
 **Brought by the user (not shipped here, each under its own terms):**
 - **A coding agent** — Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI, Windsurf, OpenCode, or Kiro — that reads the skills and executes commands (their respective vendors).

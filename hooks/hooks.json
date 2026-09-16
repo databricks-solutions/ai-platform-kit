@@ -1,0 +1,17 @@
+{
+  "description": "Credential-safety gate for ai-platform-kit. On every Bash and Read tool call, blocks reads of credential and state files (.databrickscfg, .aws/credentials, cloud tokens, *.tfstate, *.tfvars). Resolved via ${CLAUDE_PLUGIN_ROOT} so the guardrail is delivered when the kit is installed as a plugin, not just when Claude Code runs from the repo. Rationale: SECURITY.md.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/block-cred-reads.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

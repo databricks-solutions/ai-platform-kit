@@ -1,6 +1,6 @@
 {
   "name": "ai-platform-kit",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Databricks platform engineering toolkit — provision workspaces, configure Unity Catalog, manage identity and governance, set up networking across Azure, AWS, and GCP.",
   "author": {
     "name": "Databricks Solutions"
@@ -8,6 +8,7 @@
   "repository": "https://github.com/databricks-solutions/ai-platform-kit",
   "homepage": "https://github.com/databricks-solutions/ai-platform-kit",
   "license": "Databricks License (see LICENSE.md)",
-  "keywords": ["databricks", "terraform", "unity-catalog", "platform-engineering", "aws", "azure", "gcp"],
-  "skills": "./.claude/skills/"
+  "keywords": ["databricks", "terraform", "unity-catalog", "platform-engineering", "aws", "azure", "gcp", "external"],
+  "skills": "./.claude/skills/",
+  "hooks": "./hooks/hooks.json"
 }
