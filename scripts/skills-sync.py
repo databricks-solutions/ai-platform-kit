@@ -544,9 +544,10 @@ def _install_claude(skills: list[Skill], target: Path, is_global: bool) -> list[
     # skills dir and does not carry project hooks).
     if not is_global:
         claude_dir = target / ".claude"
-        hooks_dir = claude_dir / "hooks"
+        hooks_dir = target / "hooks"
         hooks_dir.mkdir(parents=True, exist_ok=True)
-        src_hook = REPO_ROOT / ".claude" / "hooks" / "block-cred-reads.py"
+        claude_dir.mkdir(parents=True, exist_ok=True)
+        src_hook = REPO_ROOT / "hooks" / "block-cred-reads.py"
         src_settings = REPO_ROOT / ".claude" / "settings.json"
         if src_hook.is_file():
             shutil.copy2(src_hook, hooks_dir / "block-cred-reads.py")
