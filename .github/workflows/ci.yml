@@ -1,0 +1,50 @@
+name: CI
+
+# Runs on every pull request and on pushes to main. All checks are stdlib-only /
+# git-only — no third-party actions or dependencies — so they are fast and free.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate skills (generated-file drift + lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - name: Generated pointer files are in sync
+        # Fails if a skill changed but AGENTS.md / GEMINI.md were not regenerated.
+        run: python3 scripts/skills-sync.py --generate --check
+      - name: Lint skills
+        # Frontmatter, naming, cross-links, cloud-fan completeness, README row, secrets.
+        run: python3 scripts/skills-sync.py --lint
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: No Terraform state/vars files committed
+        run: |
+          if git ls-files '*.tfstate' '*.tfvars' | grep .; then
+            echo "::error::Terraform state/vars files must never be committed."
+            exit 1
+          fi
+          echo "OK: no .tfstate / .tfvars files committed."
+      - name: No credential material committed
+        run: |
+          if git grep -nIE \
+              -e 'AKIA[0-9A-Z]{16}' \
+              -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
+              -e 'dapi[0-9a-f]{32}'; then
+            echo "::error::Possible credential/secret material found (see matches above)."
+            exit 1
+          fi
+          echo "OK: no credential material found."

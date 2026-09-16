@@ -29,6 +29,7 @@ Run with no arguments for interactive mode (the picker the wrappers use).
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -384,6 +385,152 @@ def do_generate(check: bool) -> int:
 
 
 # --------------------------------------------------------------------------------------
+# LINT mode
+# --------------------------------------------------------------------------------------
+#
+# Mechanical checks for a skill contribution — the boring stuff a human shouldn't have to
+# eyeball on every PR. ERRORS fail (exit 1); warnings are surfaced but don't fail, so the
+# current kit (e.g. deployment-verification, which has no customer-interaction section)
+# stays green while new contributions still get nudged.
+
+RESERVED_NAME_WORDS = ("claude", "anthropic")
+MAX_NAME_LEN = 64
+MAX_DESC_LEN = 1024
+CLOUD_FILES = ("AWS.md", "AZURE.md", "GCP.md")
+
+_KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_INTERACT_HEADING_RE = re.compile(r"^##\s+how to interact with the customer\s*$", re.I)
+_CROSSLINK_HEADING_RE = re.compile(r"^##\s+cross[- ]?links\s*$", re.I)
+_PUSHBACK_RE = re.compile(r"\b(HIGH|MODERATE|LIGHT|MINIMAL)\b")
+# Bold, kebab-case, at least one hyphen → looks like a skill reference (not bolded prose).
+_BOLD_REF_RE = re.compile(r"\*\*([a-z0-9]+(?:-[a-z0-9]+)+)\*\*")
+# Actual secret MATERIAL (not mere mentions of state files, which skills discuss in prose).
+_CRED_MATERIAL = (
+    ("AWS access key id", re.compile(r"AKIA[0-9A-Z]{16}")),
+    ("private key block", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
+    ("Databricks token", re.compile(r"\bdapi[0-9a-f]{32}\b")),
+)
+
+
+def _crosslink_section(text: str) -> str:
+    """Return the body under a `## Cross-links` heading (until the next `## ` heading)."""
+    out: list[str] = []
+    capturing = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            capturing = bool(_CROSSLINK_HEADING_RE.match(line))
+            continue
+        if capturing:
+            out.append(line)
+    return "\n".join(out)
+
+
+def do_lint(only: str | None) -> int:
+    """Validate skills. Returns 1 if any ERROR is found; warnings never fail."""
+    skills = discover_skills()
+    known = {s.dir_name for s in skills}
+    readme = REPO_ROOT / "README.md"
+    readme_text = readme.read_text(encoding="utf-8") if readme.is_file() else ""
+
+    total_err = 0
+    total_warn = 0
+    matched = 0
+
+    for s in skills:
+        if only and only not in (s.dir_name, s.name):
+            continue
+        matched += 1
+        errs: list[str] = []
+        warns: list[str] = []
+
+        text = (s.directory / "SKILL.md").read_text(encoding="utf-8")
+        fm = _parse_frontmatter(text)
+        name = fm.get("name", "").strip()
+        desc = fm.get("description", "").strip()
+
+        # Frontmatter: name
+        if not name:
+            errs.append("frontmatter is missing `name`")
+        else:
+            if not _KEBAB_RE.match(name):
+                errs.append(f"name '{name}' is not kebab-case (lowercase letters, digits, hyphens)")
+            if len(name) > MAX_NAME_LEN:
+                errs.append(f"name is {len(name)} chars (max {MAX_NAME_LEN})")
+            for w in RESERVED_NAME_WORDS:
+                if w in name.lower():
+                    errs.append(f"name contains reserved word '{w}'")
+        # Frontmatter: description
+        if not desc:
+            errs.append("frontmatter is missing `description`")
+        elif len(desc) > MAX_DESC_LEN:
+            errs.append(f"description is {len(desc)} chars (max {MAX_DESC_LEN})")
+        # Directory name
+        if not _KEBAB_RE.match(s.dir_name):
+            errs.append(f"directory name '{s.dir_name}' is not kebab-case")
+
+        # Customer-interaction / pushback section (warning — not all skills are customer-facing)
+        if any(_INTERACT_HEADING_RE.match(ln) for ln in text.splitlines()):
+            if not _PUSHBACK_RE.search(text):
+                warns.append('has a "How to interact with the customer" section but names no '
+                             "pushback level (HIGH/MODERATE/LIGHT/MINIMAL)")
+        else:
+            warns.append('no "## How to interact with the customer" section '
+                         "(customer-facing skills should state a pushback level)")
+
+        # Cross-links resolve to real skills
+        for m in _BOLD_REF_RE.finditer(_crosslink_section(text)):
+            ref = m.group(1)
+            if ref not in known:
+                errs.append(f"cross-link **{ref}** points to a skill that doesn't exist (typo?)")
+
+        # Cloud-fan completeness: any of AWS/AZURE/GCP present ⇒ all three present
+        present = {n for n in CLOUD_FILES if (s.directory / n).is_file()}
+        if present and present != set(CLOUD_FILES):
+            missing = sorted(set(CLOUD_FILES) - present)
+            errs.append(f"cloud-fanned skill is missing {', '.join(missing)} "
+                        f"(has {', '.join(sorted(present))})")
+
+        # Listed in the README skills table
+        if readme_text and f"**{s.dir_name}**" not in readme_text:
+            errs.append(f"not listed in the README skills table (expected **{s.dir_name}**)")
+
+        # Secret material committed in the skill's markdown
+        for md in sorted(s.directory.rglob("*.md")):
+            mtext = md.read_text(encoding="utf-8", errors="ignore")
+            for label, rx in _CRED_MATERIAL:
+                if rx.search(mtext):
+                    errs.append(f"possible {label} committed in {md.relative_to(s.directory)}")
+
+        # Report
+        if errs:
+            print(f"✗ {s.dir_name}")
+            for e in errs:
+                print(f"    ERROR: {e}")
+            for w in warns:
+                print(f"    warn:  {w}")
+        elif warns:
+            print(f"! {s.dir_name}")
+            for w in warns:
+                print(f"    warn:  {w}")
+        else:
+            print(f"✓ {s.dir_name}")
+
+        total_err += len(errs)
+        total_warn += len(warns)
+
+    if only and matched == 0:
+        die(f"no skill named '{only}' found under {SKILLS_SRC}")
+
+    print()
+    if total_err:
+        print(f"lint: {total_err} error(s), {total_warn} warning(s) — fix the errors above.",
+              file=sys.stderr)
+        return 1
+    print(f"lint: 0 errors, {total_warn} warning(s). OK.")
+    return 0
+
+
+# --------------------------------------------------------------------------------------
 # INSTALL mode
 # --------------------------------------------------------------------------------------
 
@@ -594,6 +741,8 @@ def main(argv: list[str]) -> int:
                    help="regenerate committed AGENTS.md and GEMINI.md")
     p.add_argument("--check", action="store_true",
                    help="with --generate: fail if generated files are stale")
+    p.add_argument("--lint", nargs="?", const="__all__", default=None, metavar="SKILL",
+                   help="validate skills (all, or one named skill); non-zero exit on errors")
     p.add_argument("--agents", help="comma-separated agents to install (e.g. claude,codex)")
     p.add_argument("--agent", help="single agent to install")
     p.add_argument("--scope", choices=("project", "global"), default="project",
@@ -608,6 +757,9 @@ def main(argv: list[str]) -> int:
 
     if args.generate:
         return do_generate(check=args.check)
+
+    if args.lint is not None:
+        return do_lint(None if args.lint == "__all__" else args.lint)
 
     agent_keys = parse_agent_args(args.agents, args.agent)
     if agent_keys:
