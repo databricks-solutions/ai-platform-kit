@@ -126,10 +126,10 @@ The skill content is identical for every agent; only the packaging differs.
 |-------|-----------------|--------------------------|
 | Claude Code | `.claude/skills/` | `.claude/settings.json` + cred-block hook |
 | OpenAI Codex | `.agents/skills/` | `AGENTS.md` |
-| Cursor | `.cursor/skills/` | `.cursor/rules/databricks-platform-kit.mdc` |
+| Cursor | `.cursor/skills/` | `.cursor/rules/ai-platform-kit.mdc` |
 | GitHub Copilot | `.agents/skills/` | `.github/copilot-instructions.md` |
 | Gemini CLI | `.agents/skills/` | `GEMINI.md` |
-| Windsurf | `.agents/skills/` | `.windsurf/rules/databricks-platform-kit.md` |
+| Windsurf | `.agents/skills/` | `.windsurf/rules/ai-platform-kit.md` |
 | OpenCode | `.agents/skills/` | `AGENTS.md` |
 | Kiro | `.kiro/skills/` | native (Agent Skills) |
 
