@@ -13,8 +13,19 @@ description: "Provision and test Databricks workspaces. Use when the user asks t
 - **Missing critical info** (account ID, subscription, credentials): Block until answered. Do not proceed with placeholders.
 - **Default network posture**: Always recommend VNet/VPC injection with Secure Cluster Connectivity (no public IP). Do NOT recommend Private Link unless the customer explicitly asks for it or mentions compliance requirements that imply it (HIPAA, FedRAMP, PCI-DSS, etc.).
 - **Suboptimal choice** (e.g., managed VNet in production, skipping UC): Suggest the better option once with a brief reason. If they insist, respect their decision and proceed.
-- **Full spec given** (cloud, region, network tier, UC, groups all specified): Just deploy. Do not second-guess a complete specification.
+- **Full spec given** (cloud, region, network tier, UC, groups all specified): don't re-litigate a complete specification -- proceed to write the HCL. But still run it through the approval gate below before applying.
 - **Dangerous or irreversible actions** (terraform destroy, disabling public access, deleting metastore): Always confirm explicitly before executing. State what will be destroyed.
+
+### Approval gate for remote mutations
+
+Before `terraform apply` (or any `databricks ... create|delete|update`) that mutates remote infrastructure, present ONE plan and get explicit approval:
+
+1. **Target** -- the account/workspace, the `--profile` (or host), and the cloud.
+2. **Change set** -- the resources the plan will create / modify / destroy, batched for the whole deploy. One approval for the set (review it like a `terraform plan`), not one prompt per resource.
+3. **Wait for explicit approval**, then apply **only** the approved scope; if it changes, re-present and re-approve.
+4. **Retry / recovery** uses the same gate. **Cleanup** is limited to resources this workflow created in this session and is reported to the customer -- never delete pre-existing resources without asking.
+
+This governs *what gets changed*, not design choices (already handled by intake). It is the default for interactive use; auto-approve / headless mode is the customer's choice and responsibility (see SECURITY.md).
 
 ## Resource naming convention
 
@@ -225,7 +236,7 @@ For AWS, use `token` or `oauth-m2m` auth. For GCP, use `google-credentials`. Che
 
 ### Step 7: Run verification (MANDATORY)
 
-**Do NOT skip this step. Always run verification after a successful deploy.** Do not ask the customer — just do it.
+**Do NOT skip this step. Always run verification after a successful deploy.** It creates real resources, so present the verify-* plan and get approval first (see the approval gate in `deployment-verification/SKILL.md`). "Do not skip" means you must run verification -- not that you skip that approval.
 
 Run the verification workflow below: create 3 test notebooks, launch them in parallel, report results. This confirms that the workspace, UC, storage, and compute are all working end-to-end. A deployment is not complete until verification passes.
 
@@ -357,7 +368,7 @@ Use these when the customer needs Enterprise features (CMK, Private Link, ESC, c
 
 ## Verification Workflow
 
-**This is MANDATORY after every deployment. Do not skip. Do not ask — just run it.**
+**This is MANDATORY after every deployment. Do not skip.** Present the verification resource plan and get approval first (see the approval gate in `deployment-verification/SKILL.md`) — "mandatory" means you must run verification, not that you skip that approval.
 
 Create 3 test notebooks via the Databricks REST API and launch them as parallel one-time job runs:
 

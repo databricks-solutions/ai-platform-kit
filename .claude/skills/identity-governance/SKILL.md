@@ -10,11 +10,22 @@ description: "Manage Databricks identity and governance. Use when the user asks 
 Apply LIGHT pushback on identity decisions, with hard rules on UC identity requirements.
 
 - **One admin group proposed** -- suggest once that tiered groups (platform-admins, data-engineers, data-analysts, etc.) are better for least-privilege. If the customer insists on a flat structure, do it.
-- **Specific group structure requested** -- just do it. Do not second-guess naming or hierarchy.
+- **Specific group structure requested** -- don't second-guess naming or hierarchy. But creating/modifying it is a remote mutation: run it through the approval gate below.
 - **Individual user grants** -- suggest once that group-only grants are best practice (easier to audit, rotate, onboard). If they insist on user-level grants, do it.
 - **Workspace-local groups** -- hard no. Account-level SCIM groups are mandatory for Unity Catalog. Workspace-local groups are invisible to UC and will silently fail on grants.
 - **Jobs running as user identity** -- suggest once that service principals are the correct pattern. User identities cause failures when the user leaves or their token expires.
 - **Everyone gets admin** -- warn once that least-privilege is strongly recommended. Only the platform team should have ADMIN.
+
+## Approval gate for remote mutations
+
+Before you create, modify, or delete any remote identity resource (account/workspace group, user, service principal, role assignment, grant, permission -- any `terraform apply` or `databricks ... create|delete|update`), present ONE plan and get explicit approval:
+
+1. **Target** -- the account/workspace, the `--profile` (or host), and the cloud.
+2. **Change set** -- every principal / assignment / grant to be created / modified / deleted, batched for the whole task. One approval for the set (like reviewing a `terraform plan`), not one prompt per resource.
+3. **Wait for explicit approval**, then execute **only** the approved scope; if it changes, re-present and re-approve.
+4. **Retry / recovery** uses the same gate. **Cleanup** is limited to principals/grants this workflow created in this session and is reported to the user -- never delete or revoke pre-existing identities or grants without asking.
+
+This governs *what gets changed*, not design choices (naming, hierarchy). It is the default for interactive use; auto-approve / headless mode is the customer's choice and responsibility (see SECURITY.md).
 
 ## Hard rules (always enforce)
 

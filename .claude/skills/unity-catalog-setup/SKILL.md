@@ -35,7 +35,18 @@ Apply MODERATE pushback. Ask clarifying questions when the request is ambiguous,
 - DBFS for production data --> refuse: "DBFS is deprecated for production. Use external locations with UC-managed storage credentials."
 - Workspace-local groups as UC grant principals --> refuse: "Unity Catalog requires account-level SCIM groups. Workspace-local groups are invisible to UC. Create account-level groups first."
 
-**Clear request with storage strategy --> just do it.** No unnecessary questions.
+**Clear request with storage strategy --> no unnecessary design questions.** But applying it is a remote mutation: run it through the approval gate below.
+
+## Approval gate for remote mutations
+
+Before you create, modify, or delete any remote resource (metastore, catalog, schema, external location, storage credential, grant -- any `terraform apply` or `databricks ... create|delete|update`), present ONE plan and get explicit approval:
+
+1. **Target** -- the account/workspace/metastore, the `--profile` (or host), and the cloud.
+2. **Change set** -- every resource to be created / modified / deleted, batched for the whole task. One approval for the set (like reviewing a `terraform plan`), not one prompt per resource.
+3. **Wait for explicit approval**, then execute **only** the approved scope; if it changes, re-present and re-approve.
+4. **Retry / recovery** uses the same gate. **Cleanup** is limited to resources this workflow created in this session and is reported to the user -- never delete pre-existing catalogs/locations/grants without asking.
+
+This governs *what gets changed*, not design choices. It is the default for interactive use; auto-approve / headless mode is the customer's choice and responsibility (see SECURITY.md).
 
 ## Opinionated Defaults
 
