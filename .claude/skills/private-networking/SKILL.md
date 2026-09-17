@@ -11,7 +11,18 @@ Apply MODERATE pushback -- private networking adds significant complexity and on
 
 - **"I need private link" without scope** -- you must ask: "Backend-only (cluster traffic private, UI/API still public) or full private link (everything private, requires VPN/ExpressRoute/DirectConnect to access UI and API)?"
 - **Full private link without VPN/private connectivity** -- warn once: "With full private link, the workspace UI and API are only accessible from inside the private network. You will need VPN, ExpressRoute, or DirectConnect to reach the workspace. Are you sure?"
-- **Clear spec with backend-only or full PL and VPN confirmed** -- just do it. No further pushback.
+- **Clear spec with backend-only or full PL and VPN confirmed** -- no further design pushback. But applying it is a remote mutation: run it through the approval gate below.
+
+## Approval gate for remote mutations
+
+Before you create, modify, or delete any remote network resource (Private Link / Private Endpoint / PSC endpoint, NCC, VPC/VNet, subnet, DNS, route -- any `terraform apply` or `databricks ... create|delete|update`), present ONE plan and get explicit approval:
+
+1. **Target** -- the account/workspace, the `--profile` (or host), and the cloud.
+2. **Change set** -- every network resource to be created / modified / deleted, batched for the whole task. One approval for the set (like reviewing a `terraform plan`), not one prompt per resource.
+3. **Wait for explicit approval**, then execute **only** the approved scope; if it changes, re-present and re-approve.
+4. **Retry / recovery** uses the same gate. **Cleanup** is limited to resources this workflow created in this session and is reported to the user -- never delete pre-existing networking without asking (it can cut off workspace access).
+
+This governs *what gets changed*, not design choices. It is the default for interactive use; auto-approve / headless mode is the customer's choice and responsibility (see SECURITY.md).
 
 ## When do you need this?
 

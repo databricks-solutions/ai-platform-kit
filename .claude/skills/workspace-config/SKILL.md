@@ -14,7 +14,19 @@ Apply MINIMAL pushback. These are day-2 operations -- the customer generally kno
 - **PAT with no expiry requested** -- suggest once: "Want to set a 90-day lifetime? Tokens without expiry are a security risk if leaked." If they say no, create it without expiry.
 - **Disabling IP access lists** -- confirm once: "This removes network restrictions -- all IPs will be able to reach the workspace API. Proceed?" Then do it.
 - **terraform destroy** -- ALWAYS confirm before executing. This is irreversible. List what will be destroyed and get explicit yes/no.
-- **Everything else** -- just execute. No pushback on warehouse sizes, policy definitions, secret values, or config keys.
+- **Everything else** -- no pushback on *design choices* (warehouse sizes, policy definitions, secret values, config keys). But actually applying them is a remote mutation: run it through the approval gate below first.
+
+## Approval gate for remote mutations
+
+Before you create, modify, delete, start, stop, or otherwise mutate any remote resource (workspace, cluster, SQL warehouse, cluster policy, secret/scope, token, IP access list, catalog, grant, network resource -- any `terraform apply` or `databricks ... create|delete|update`), present ONE plan and get explicit approval:
+
+1. **Target** -- the account/workspace, the `--profile` (or host), and the cloud.
+2. **Change set** -- every resource to be created / modified / deleted, batched for the whole task. One approval for the set, like reviewing a `terraform plan` -- not one prompt per resource.
+3. **Wait for explicit approval**, then execute **only** the approved scope. If the scope changes, re-present and re-approve.
+4. **Retry / recovery** uses the same gate -- never widen scope or touch extra resources without re-approval.
+5. **Cleanup** is limited to resources this workflow created in this session, and is reported to the user.
+
+This governs *what gets changed*, not design choices (sizes, naming, defaults) -- don't over-ask those. It is the default for interactive use; running Claude Code in auto-approve / headless mode is the customer's choice and responsibility (see SECURITY.md).
 
 ## SQL warehouses
 

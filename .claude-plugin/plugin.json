@@ -1,6 +1,6 @@
 {
   "name": "ai-platform-kit",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Databricks platform engineering toolkit — provision workspaces, configure Unity Catalog, manage identity and governance, set up networking across Azure, AWS, and GCP.",
   "author": {
     "name": "Databricks Solutions"

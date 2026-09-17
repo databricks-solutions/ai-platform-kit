@@ -15,6 +15,18 @@ description: "MANDATORY post-deployment verification. After any workspace + Unit
 >
 > One success on serverless does NOT count as verified. Classic must work too — that's where most real-world skill bugs live (cluster policies, init scripts, custom AMIs, SCC/PrivateLink port story, JVM warmup interactions with private storage, `data_security_mode` enforcement). If you only test serverless you're testing the easy path.
 
+## Approval gate for the verification resources
+
+Verification is **mandatory** (never skip it), but the verification itself creates real remote resources — a classic cluster, a PRO SQL warehouse, a notebook, and a job. Those are mutations, so before creating them present ONE plan and get explicit approval:
+
+1. **Target** -- the workspace and the `--profile` (or host) you will verify against.
+2. **Change set** -- the exact verify-* resources you will create (cluster, warehouse, notebook, job) and the UC table you will CREATE/INSERT/SELECT/DROP. Batched: one approval for the whole verification run, not one prompt per resource.
+3. **Wait for explicit approval**, then create **only** those resources.
+4. **Retry / recovery** uses the same gate — never create extra resources without re-approval.
+5. **Cleanup** (below) destroys only the verify-* resources this run created, and reports what it removed.
+
+"Mandatory" means you must not declare a deployment done without running verification — it does not mean skipping this approval. It is the default for interactive use; auto-approve / headless mode is the customer's choice and responsibility (see SECURITY.md).
+
 ## Why this is its own skill
 
 Deployment verification is the most-skipped step in every platform stress test. Agents reach for the cheapest path (serverless SQL) because it's the fastest and the cluster cold-start warning in `workspace-config` discourages classic. Result: skill gaps that only surface on classic clusters never get caught until a real customer hits them in prod. **This skill exists to make verification impossible to forget and impossible to half-do.**
@@ -333,7 +345,7 @@ Error: cannot create cluster: Cluster <name> already exists
 
 ## Cleanup
 
-After PASS:
+After PASS, clean up **only the verify-* resources this run created** (never anything else), and report to the customer exactly what you removed:
 
 ```bash
 # Drop verify objects (idempotent — they were already DROPped per-path, but kill the resources)
@@ -343,7 +355,7 @@ terraform destroy -target=databricks_job.verify_notebook
 terraform destroy -target=databricks_notebook.verify_notebook
 ```
 
-Or leave them in place if the customer wants the warehouses/clusters for ongoing work — but tag them clearly with `purpose=deployment-verification` so they can be found.
+Or leave them in place if the customer wants the warehouses/clusters for ongoing work — but tag them clearly with `purpose=deployment-verification` so they can be found. Never delete pre-existing resources you did not create in this run to "make room" or reset state; if something is in the way, report it and ask.
 
 ## How this skill is referenced from other skills
 
