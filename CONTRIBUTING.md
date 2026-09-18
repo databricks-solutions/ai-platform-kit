@@ -6,6 +6,36 @@ which reviews and merges contributions. You do **not** need to be on the Field E
 team, and you do **not** need to be added to any GitHub org: this is a public repository,
 so you contribute the standard open-source way, by fork and pull request.
 
+## Philosophy — what belongs here, and what makes a good skill
+
+Before writing, it helps to know the shape of this kit and the bar for a contribution:
+
+- **This kit is a thin layer.** It ships skills and a little glue — the instructions that
+  drive an agent — and nothing else. It orchestrates tools the user installs and
+  authenticates separately (the coding agent, Terraform, the cloud and Databricks CLIs) and
+  never handles their credentials. New skills stay on that side of the line: guidance, not
+  bundled binaries, packages, or an MCP server.
+- **Skills are opinionated on purpose.** The kit takes a clear position (self-managed
+  metastore, per-environment catalogs, a medallion layout, secure-by-default networking). A
+  good skill has a point of view and a sensible default rather than exposing every knob and
+  asking the user to decide everything.
+- **State a customer-interaction posture.** Customer-facing skills carry a `## How to
+  interact with the customer` section that sets a pushback level — how hard the agent should
+  push back on a risky or ill-advised request. Decide yours deliberately; it is part of the
+  design, not boilerplate.
+- **Cloud-agnostic unless it genuinely can't be.** Keep a skill cloud-agnostic (one
+  `SKILL.md`) when the guidance is the same everywhere. Only fan out into `AWS.md` /
+  `AZURE.md` / `GCP.md` when the clouds truly diverge — and then cover all three.
+- **Safe by default.** Never commit credentials, tokens, cloud account IDs, customer names,
+  or `*.tfstate` / `*.tfvars`. Use placeholders in every example, prefer read/plan steps
+  before mutations, and make destructive actions explicit.
+- **Prefer improving an existing skill over adding a new one.** A sharper gotcha or a fixed
+  edge case is often worth more than a new top-level skill. Add a new skill when the task is
+  a genuinely distinct workflow, not a variation of one already here.
+- **Earn the reader's trust with specifics.** The value is in the sharp edges — the auth
+  quirk, the ordering constraint, the step that silently fails. Generic guidance the agent
+  already knows just adds noise.
+
 ## How to contribute (the whole path)
 
 1. **Fork** the repo on GitHub (top-right "Fork"). Use a personal GitHub account with your
