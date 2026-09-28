@@ -37,5 +37,8 @@ credentials.json
 # Claude Code (per-user local config; skills are tracked in .claude/skills/)
 .claude/settings.local.json
 
+# Isaac (local tool-state; regenerated per user)
+.isaac/
+
 # Deployments (created at runtime by Claude per customer)
 deployments/

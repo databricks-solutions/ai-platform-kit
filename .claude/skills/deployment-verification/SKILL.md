@@ -15,6 +15,15 @@ description: "MANDATORY post-deployment verification. After any workspace + Unit
 >
 > One success on serverless does NOT count as verified. Classic must work too — that's where most real-world skill bugs live (cluster policies, init scripts, custom AMIs, SCC/PrivateLink port story, JVM warmup interactions with private storage, `data_security_mode` enforcement). If you only test serverless you're testing the easy path.
 
+## How to interact with the customer
+
+**Pushback level: HIGH for skipping verification and for the remote mutations verification creates.**
+
+- Verification is mandatory: never declare a deployment "done" or "verified" without running all three paths. Resist "it took too long", "we're serverless-first", or "it's just a POC" — none is a valid reason to skip (see "When to skip" for the narrow, logged exceptions).
+- The verification resources are real remote mutations. Present one batched plan and get explicit approval before creating them (see the approval gate below); never skip that gate, and never create extra resources on retry without re-approval.
+- Report results faithfully — per path PASS / FAIL / SKIPPED-WITH-REASON, with the reason recorded. A partial or half-run verification is incomplete work, not a pass.
+- When a path fails on a customer-account constraint (quota, capacity, missing approval), stop and tell the customer what is blocking and where to fix it, rather than silently skipping.
+
 ## Approval gate for the verification resources
 
 Verification is **mandatory** (never skip it), but the verification itself creates real remote resources — a classic cluster, a PRO SQL warehouse, a notebook, and a job. Those are mutations, so before creating them present ONE plan and get explicit approval:

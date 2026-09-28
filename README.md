@@ -171,7 +171,8 @@ The agent will:
 
 | Skill | What it does | When it loads |
 |-------|-------------|---------------|
-| **platform-provisioning** | Create workspaces, deploy infrastructure | "create a workspace", "provision", "deploy" |
+| **workspace-advisor** | Default entry for setting up a workspace: decide the architecture, compute model, and security posture, then hand off | "set up / provision a workspace", "help me choose", "not sure what to deploy", "how private", "serverless or classic" |
+| **platform-provisioning** | Deploy a known architecture — a concrete spec or approved advisor decision record — with Terraform, and test/verify it | "deploy this spec", "I know what to deploy", "apply the approved record", "verify the deployment" |
 | **unity-catalog-setup** | Metastore, catalogs, schemas, grants, Lakehouse Federation | "Unity Catalog", "metastore", "catalog" |
 | **identity-governance** | Groups, users, SPs, RBAC | "groups", "permissions", "service principal" |
 | **workspace-config** | SQL warehouses, policies, secrets, tokens | "SQL warehouse", "cluster policy", "secret" |
