@@ -1,6 +1,6 @@
 # Private Service Connect (PSC) on Databricks GCP
 
-GCP's equivalent of AWS PrivateLink and Azure Private Endpoint. PSC for Databricks on GCP is **supported today** (any older skill text saying "GCP does not have private link yet" is stale). Both back-end (compute → control plane) and front-end (users → workspace UI/API) are supported. Combined = full PSC.
+GCP's equivalent of AWS PrivateLink and Azure Private Endpoint. PSC for Databricks on GCP is **GA** (since November 2025) and self-service (any older skill text saying "GCP does not have private link yet" is stale). Both back-end (compute → control plane) and front-end (users → workspace UI/API) are supported. Combined = full PSC.
 
 ## When to use PSC
 
@@ -27,7 +27,7 @@ Apply MODERATE pushback when customers ask for PSC without a real driver. PSC ad
                    │
                    ▼
         ┌────────────────────────┐
-        │  Cluster nodes (GKE)   │
+        │  Cluster nodes (GCE)   │
         │  in customer subnet    │
         └────────────────────────┘
 ```
@@ -119,8 +119,7 @@ resource "databricks_mws_networks" "psc" {
     vpc_id                = google_compute_network.workspace.name
     subnet_id             = google_compute_subnetwork.workspace.name
     subnet_region         = var.region
-    pod_ip_range_name     = "pods"
-    service_ip_range_name = "services"
+    # No pod/service range names — deprecated GKE-era fields.
   }
   vpc_endpoints {
     dataplane_relay        = databricks_mws_vpc_endpoint.relay.vpc_endpoint_id
@@ -190,7 +189,7 @@ PSC and customer-managed VPC features require the **ENTERPRISE** plan. PREMIUM w
 
 ### PSC-backend-only + Unity Catalog + classic compute is structurally broken
 
-If you deploy back-end PSC (compute → control plane private) without front-end PSC (users → webapp private), and try to use **classic** GKE-pod clusters with Unity Catalog, the UC API calls from classic compute return `403 Unauthorized network access to workspace`. The same UC objects work fine from serverless. Marisol reproduced this in R3-2026-05-11 across cluster restarts and PAS-level changes.
+If you deploy back-end PSC (compute → control plane private) without front-end PSC (users → webapp private), and try to use **classic** clusters with Unity Catalog, the UC API calls from classic compute return `403 Unauthorized network access to workspace`. The same UC objects work fine from serverless. Marisol reproduced this in R3-2026-05-11 across cluster restarts and PAS-level changes.
 
 Mitigation options:
 - **Serverless-only workflows** if PSC-backend is required
@@ -208,7 +207,7 @@ If you set the PAS `public_access_enabled = false` at workspace creation, every 
 
 ### PSC workspaces need a private DNS zone
 
-Classic compute resolves the workspace URL by name. If the cluster's GKE pods can't reach Databricks DNS via PSC, classic Path-1 verification (`CREATE TABLE` against a UC table) fails with `403 Unauthorized network access` even though network routes look correct. Fix: create a Cloud DNS private zone scoped to the workspace VPC that maps:
+Classic compute resolves the workspace URL by name. If the cluster nodes can't reach Databricks DNS via PSC, classic Path-1 verification (`CREATE TABLE` against a UC table) fails with `403 Unauthorized network access` even though network routes look correct. Fix: create a Cloud DNS private zone scoped to the workspace VPC that maps:
 ```
 <workspace-id>.<region>.gcp.databricks.com → <PSC frontend endpoint IP>
 dp-<workspace-id>.<region>.gcp.databricks.com → <PSC frontend endpoint IP>
@@ -243,7 +242,7 @@ This trade-off is real: you cannot have "no public access at creation" AND "UC b
 
 - [`SKILL.md`](SKILL.md) — when to use private networking at all, NCC for serverless egress
 - [`../platform-provisioning/gcp-1-auth.md`](../platform-provisioning/gcp-1-auth.md) — the auth chain must work first
-- [`../platform-provisioning/gcp-2-deploy.md`](../platform-provisioning/gcp-2-deploy.md) — BYOVPC subnet + secondary ranges
+- [`../platform-provisioning/gcp-2-deploy.md`](../platform-provisioning/gcp-2-deploy.md) — BYOVPC subnet, sizing, and firewall rule
 - [`../platform-provisioning/gcp-3-gotchas.md`](../platform-provisioning/gcp-3-gotchas.md) — `databricks_mws_vpc_endpoint` provider bug + CLI-import workaround
 - Reference (Databricks Platform SME):
   - https://medium.com/databricks-platform-sme/demystifying-frontend-private-service-connect-psc-architecture-for-databricks-on-google-cloud-5de6fe894313

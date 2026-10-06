@@ -225,7 +225,7 @@ b. **`tested == false` is not the same as a denied permission.** Some
 
 c. **Shared VPC requires a second pre-check.** This script tests permissions
    only in the project passed via `--project`. Shared-VPC deployments split
-   resources across two projects: the workspace + GKE + SA live in the
+   resources across two projects: the workspace + compute + SA live in the
    **service project**, the VPC + subnets + firewalls + router live in the
    **host project**. Running this script against the service project will
    show `vpc_network`, `subnetwork`, `firewall`, `router_nat` as missing —

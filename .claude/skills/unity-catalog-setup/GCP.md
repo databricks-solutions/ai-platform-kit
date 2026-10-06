@@ -6,6 +6,8 @@ GCP-specific patterns, resources, and gotchas for Unity Catalog setup.
 
 One GCS bucket for the metastore root storage, plus one per environment for per-env catalogs.
 
+**Do not enable hierarchical namespace (HNS) on these buckets.** Unity Catalog external locations do not support GCS buckets with HNS enabled; leave `hierarchical_namespace` unset/disabled when creating them.
+
 ```hcl
 resource "google_storage_bucket" "metastore" {
   name          = "${var.prefix}-uc-metastore"

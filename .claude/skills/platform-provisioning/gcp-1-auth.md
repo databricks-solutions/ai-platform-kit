@@ -79,7 +79,7 @@ done
 ```
 
 Why each role:
-- `roles/editor` — base permissions on compute, storage, GKE
+- `roles/editor` — base permissions on compute and storage
 - `roles/iam.serviceAccountAdmin` — workspace creation needs to create the workspace SA inside the project
 - `roles/resourcemanager.projectIamAdmin` — to bind roles to the workspace SA
 - `roles/iam.roleAdmin` — bootstrap of the Databricks GCP service agent custom role on first workspace request

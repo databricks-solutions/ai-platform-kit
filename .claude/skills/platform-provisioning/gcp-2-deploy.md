@@ -43,7 +43,7 @@ resource "databricks_mws_workspaces" "this" {
 
 ### 1. Managed VPC (simplest — for POCs)
 
-Databricks creates the VPC + subnet + GKE cluster for you. Cannot share VPCs across workspaces. No PSC, no VPC SC, no firewall egress restriction.
+Databricks creates the VPC + subnet for you and launches GCE compute in it. Cannot share VPCs across workspaces. No PSC, no VPC SC, no firewall egress restriction.
 
 ```hcl
 resource "databricks_mws_workspaces" "managed" {
@@ -61,7 +61,7 @@ resource "databricks_mws_workspaces" "managed" {
 
 ### 2. BYO VPC (production default)
 
-You pre-create the VPC + subnet + secondary IP ranges; Databricks creates GKE in your subnet.
+You pre-create the VPC + subnet (primary range only — no secondary ranges); Databricks launches GCE compute VMs in your subnet.
 
 ```hcl
 resource "google_compute_network" "ws" {
@@ -77,16 +77,17 @@ resource "google_compute_subnetwork" "ws" {
   network       = google_compute_network.ws.id
   ip_cidr_range = "10.10.0.0/23"
   private_ip_google_access = true
+  # No secondary ranges: GCE-based compute uses the primary range only.
+}
 
-  # CRITICAL: GKE pod + service secondary ranges
-  secondary_ip_range {
-    range_name    = "pods"
-    ip_cidr_range = "10.20.0.0/18"  # /18 = 16384 IPs; each node consumes a /24
-  }
-  secondary_ip_range {
-    range_name    = "services"
-    ip_cidr_range = "10.30.0.0/22"  # /22 = 1024 IPs
-  }
+# Required: allow all traffic between nodes inside the workspace subnet.
+resource "google_compute_firewall" "intra_subnet" {
+  name      = "db-${google_compute_subnetwork.ws.name}-ingress"
+  project   = var.google_project
+  network   = google_compute_network.ws.id
+  direction = "INGRESS"
+  allow { protocol = "all" }
+  source_ranges = [google_compute_subnetwork.ws.ip_cidr_range]
 }
 
 resource "databricks_mws_networks" "byovpc" {
@@ -98,21 +99,29 @@ resource "databricks_mws_networks" "byovpc" {
     vpc_id               = google_compute_network.ws.name
     subnet_id            = google_compute_subnetwork.ws.name
     subnet_region        = var.google_region
-    pod_ip_range_name    = "pods"
-    service_ip_range_name = "services"
+    # pod_ip_range_name / service_ip_range_name are deprecated and no longer
+    # supported (GKE-era). Do not set them.
   }
 }
 ```
 
 Pair with Cloud NAT + Cloud Router for outbound (since BYOVPC subnets have no auto-NAT). If the customer needs a static egress IP (e.g., for Delta Sharing partner allowlists), use Cloud NAT in `MANUAL` mode with `google_compute_address` reservations.
 
-**Sizing rules:**
-- Primary subnet: at least /23, sized for max workspace nodes
-- Pod secondary range: **/18 or /19** — each GKE node consumes a /24 from this; small ranges exhaust during autoscaling and produce `pod_scheduling_failure` / `allocation_timeout`
-- Service secondary range: /22 or /23
-- Private Google Access **MUST** be enabled on the subnet — without it, GKE nodes cannot reach `googleapis.com` and bootstrap fails
+**Sizing rules** (each compute node uses **2 IPs** from the primary range; allowed range /29 to /9):
 
-The upstream `terraform-databricks-examples/modules/gcp-workspace-byovpc/vpc.tf` does NOT declare the secondary ranges. Do not use the upstream module verbatim — declare the ranges yourself.
+| Subnet | Max nodes |
+|---|---|
+| /25 | ~60 |
+| /24 | ~120 |
+| /23 | ~250 (good default) |
+| /22 | ~500 |
+| /21 | ~1000 |
+| /20 | ~2000 |
+| /19 | ~4000 |
+
+- Private Google Access **MUST** be enabled on the subnet — without it, compute nodes cannot reach `googleapis.com` and bootstrap fails.
+- The `db-<subnet-name>-ingress` intra-subnet firewall rule above is required.
+- **Existing GKE-era workspaces:** if their networks still declare pod/service ranges, it is safe to leave the ranges on the subnet, but remove `pod_ip_range_name` / `service_ip_range_name` from new `databricks_mws_networks` configs.
 
 ### 3. BYO VPC + PSC (no public endpoints)
 
@@ -134,7 +143,7 @@ After workspace creation, switch to the workspace-level provider for everything 
 
 Databricks auto-creates a workspace service account in your project after workspace creation. You do not control its lifecycle but you grant it access to external GCS buckets, BigQuery datasets, etc. when the cluster needs to read data outside the DBFS root.
 
-The default workspace SA email is in `databricks_mws_workspaces.this.gke_config[0].master_ip_range` adjacent attributes — check `workspace_url` then describe via the workspace API to retrieve the SA email programmatically.
+Do not read it from `gke_config` — that attribute is deprecated and no longer populated. After the workspace is `RUNNING`, find the Databricks-created service account(s) in the project's IAM page (`gcloud iam service-accounts list --project <project>`) and confirm the email before granting bucket or dataset access.
 
 For Unity Catalog, the storage credential generates a SEPARATE auto-managed SA (different from the workspace SA). Both SAs need bucket-level IAM grants. See [`../unity-catalog-setup/GCP.md`](../unity-catalog-setup/GCP.md).
 

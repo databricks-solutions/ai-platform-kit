@@ -112,12 +112,12 @@ Reject 12-digit numeric IDs offered as Databricks account IDs — that's the AWS
 
 ## Workspace creation time
 
-GKE control plane provisioning is the slow step. Empirical timing on `gcp-sandbox-field-eng`:
-- Simple SERVERLESS workspace: ~25-40 seconds (GKE provisioned async)
+Empirical timing on `gcp-sandbox-field-eng` (measured before the GCE migration — re-measure if it looks off):
+- Simple SERVERLESS workspace: ~25-40 seconds
 - HYBRID workspace with BYOVPC: ~60-90 seconds for workspace create + ~10-15 min for first classic cluster boot
 - PSC backend-only: same as HYBRID
 
-The "10-15 min for workspace create" warning in older docs reflects the synchronous timing for HYBRID. Modern SERVERLESS-mode creates return quickly because GKE provisioning is decoupled from workspace creation.
+The "10-15 min for workspace create" warning in older docs reflects the old synchronous HYBRID timing. Most of the wait is now the first classic cluster boot, not workspace creation.
 
 ## Workspace-level provider auth quirk
 

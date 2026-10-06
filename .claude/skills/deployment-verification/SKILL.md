@@ -277,7 +277,7 @@ You may skip a path ONLY if:
 - **Skip classic** — only when one of:
   - Customer **explicitly** requires no classic compute (regulated workloads, serverless-only mandate)
   - The workspace was created with `compute_mode = "SERVERLESS"` (GCP only) — these workspaces have no worker environments and classic clusters cannot run, period. `databricks clusters create` returns `Current organization X does not have any associated worker environments`. This is structural, not a skip-for-convenience.
-  - **GCP-specific:** PSC-backend-only workspace + UC — classic GKE pods cannot reach the UC API through PSC-backend-only routing (`403 Unauthorized network access to workspace`). If the customer truly needs classic + UC + PSC, they need PSC frontend too. Log this as `SKIPPED-WITH-REASON` and recommend adding frontend PSC or switching to serverless workflows.
+  - **GCP-specific:** PSC-backend-only workspace + UC — classic compute nodes cannot reach the UC API through PSC-backend-only routing (`403 Unauthorized network access to workspace`). If the customer truly needs classic + UC + PSC, they need PSC frontend too. Log this as `SKIPPED-WITH-REASON` and recommend adding frontend PSC or switching to serverless workflows.
   Log the reason in `verification.json` with `"status": "SKIPPED-WITH-REASON"`. Do NOT skip classic just because cold-start is slow.
 - **Skip serverless** — only when the customer explicitly forbids serverless (regulated FSI / banking with no serverless approval) AND the workspace genuinely does not have serverless enabled. Log the reason.
 - **Skip notebook job** — only when serverless job compute is not available in the region. (Rare today.) Log the reason.
