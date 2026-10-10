@@ -4,6 +4,12 @@
 
 > Sibling to the [Databricks AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit): where that kit gives coding agents Databricks-specific skills for *building on* the platform, this kit focuses on *standing up* the platform itself — workspaces, Unity Catalog, identity, and networking across Azure, AWS, and GCP.
 
+## Watch the overview
+
+[![Why Is Everyone Using the Databricks AI Platform Kit?](https://i.ytimg.com/vi/-fWm9HFES7c/hqdefault.jpg)](https://www.youtube.com/watch?v=-fWm9HFES7c)
+
+*Why Is Everyone Using the Databricks AI Platform Kit?* — a short walkthrough of what the kit does and how to use it.
+
 ## What it does
 
 Tell your agent what you need, and it handles the rest:
