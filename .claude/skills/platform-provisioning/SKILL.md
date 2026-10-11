@@ -1,6 +1,6 @@
 ---
 name: databricks-platform-provisioning
-description: "Provision and test Databricks workspaces. Use when the user asks to create a workspace, set up a new environment, provision infrastructure, bootstrap Databricks, test a workspace, verify a deployment, or run validation checks against a Databricks workspace. Covers Azure, AWS, and GCP."
+description: "Use when a customer says they know which Databricks workspace architecture to deploy, supplies a concrete workspace specification, approves a Workspace Advisor decision record for Terraform deployment, or asks to test or verify a deployment. Provisions and tests workspaces with Terraform across Azure, AWS, and GCP. If the customer does not know which architecture they need, use databricks-workspace-advisor first."
 ---
 
 # Databricks Platform Provisioning
@@ -9,9 +9,13 @@ description: "Provision and test Databricks workspaces. Use when the user asks t
 
 **Pushback level: HIGH.** Infrastructure provisioning is expensive and hard to undo. Push back on incomplete or risky requests.
 
-- **Vague request** (e.g., "set up Databricks"): You MUST ask for cloud, region, and whether they want Unity Catalog before writing any code. Do not guess.
+- **Architecture unknown** (e.g., "set up Databricks, but we do not know what architecture we need"): Stop this intake and use `../workspace-advisor/SKILL.md`.
+- **Customer says the architecture is known:** Stay in this provisioning skill. Ask only for missing implementation details; do not send them through the advisor.
+- **Approved Workspace Advisor record:** Pre-fill intake from the record. Do not re-ask settled architecture questions (cloud, region, compute model, security posture, network posture, CMK, compliance, environment strategy). Ask only remaining identifiers such as account/subscription IDs and `<prefix>`.
+- **Vague deployment request with no indication whether the architecture is known:** Ask whether they already know what to deploy. If yes, continue this intake; if no, use `../workspace-advisor/SKILL.md`.
 - **Missing critical info** (account ID, subscription, credentials): Block until answered. Do not proceed with placeholders.
-- **Default network posture**: Always recommend VNet/VPC injection with Secure Cluster Connectivity (no public IP). Do NOT recommend Private Link unless the customer explicitly asks for it or mentions compliance requirements that imply it (HIPAA, FedRAMP, PCI-DSS, etc.).
+- **Default network posture:** If an approved advisor record or a concrete spec already requires a Fully-private (private front-end) posture, private UI/API access, Private Link/Private Endpoints/PSC, or named compliance that implies private connectivity, treat that as an explicit private-networking request and load `../private-networking/SKILL.md`. Do not fall back to a public-front-end workspace.
+- **Default network posture when architecture is otherwise unset:** Recommend VNet/VPC injection with Secure Cluster Connectivity (no public IP). Do NOT recommend Private Link unless the customer explicitly asks for it, the advisor record requires it, or they mention compliance requirements that imply it (HIPAA, FedRAMP, PCI-DSS, etc.).
 - **Suboptimal choice** (e.g., managed VNet in production, skipping UC): Suggest the better option once with a brief reason. If they insist, respect their decision and proceed.
 - **Full spec given** (cloud, region, network tier, UC, groups all specified): don't re-litigate a complete specification -- proceed to write the HCL. But still run it through the approval gate below before applying.
 - **Dangerous or irreversible actions** (terraform destroy, disabling public access, deleting metastore): Always confirm explicitly before executing. State what will be destroyed.
@@ -49,7 +53,9 @@ Once you know the customer's cloud, read the corresponding cloud file (AZURE.md,
 
 Ask these questions before deploying. Use plain language — the customer may not know Databricks-specific terms. Keep it conversational, not a checklist dump. Ask in logical groups, not all at once.
 
-**Round 1: Basics** (always ask)
+If an approved Workspace Advisor Unified Decision Record is in hand, skip any question already answered in the record. The record already names the posture in plain language — a **Fully private (private front-end)** posture maps to **Fully private** here, **Private backend** and **Private storage connectivity** to **Private backend**, and **Standard** to **Standard**. Do not re-offer a public front end when the record forbids it.
+
+**Round 1: Basics** (always ask, unless already in the advisor record or a concrete spec)
 
 **1. Cloud and region**
 > "Which cloud are you on (Azure / AWS / GCP) and what region should the workspace go in?"
@@ -67,7 +73,7 @@ Ask these questions before deploying. Use plain language — the customer may no
 - POC/evaluation → simpler setup, can use managed networking, skip some hardening
 - Production → VNet/VPC injection, proper IAM, encryption, monitoring
 
-**Round 2: Security and networking** (ask for production; skip or use defaults for POC)
+**Round 2: Security and networking** (ask for production when architecture is not already settled; skip or use defaults for POC)
 
 **5. Network isolation level** (use plain language, not Databricks terms)
 > "How locked down does the network need to be?"
@@ -116,7 +122,7 @@ Once you know the cloud (read the cloud-specific file AWS.md/AZURE.md/GCP.md), v
 - Storage: **one storage account/bucket per environment** for catalog data (e.g., st-<prefix>-catalog-dev, st-<prefix>-catalog-stg, st-<prefix>-catalog-prod) + one for metastore. Create external locations per bucket, catalogs with MANAGED LOCATION.
 - IAM role / access connector names: auto-generate
 - Schemas: create bronze, silver, gold (medallion) in each catalog
-- Network: VNet/VPC injection + no public IP (Secure Cluster Connectivity) as the default
+- Network: VNet/VPC injection + no public IP (Secure Cluster Connectivity) as the default when the architecture is unset. If the advisor record or spec calls for a Fully-private (private front-end) posture or private UI/API, implement front-end private connectivity instead of this default.
 - Metastore: self-managed with own storage (never rely on auto-provisioned/vending-machine metastore)
 - Service principals for CI/CD: create per-env if multi-environment
 - IaC: always use Terraform (recommend this as the deployment method)
